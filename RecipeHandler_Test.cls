@@ -18,7 +18,7 @@ public class RecipeHandler_Test {
 		// load the rec record and assert that Draft is TRUE
        	rec = [SELECT Draft__c FROM Recipe__c WHERE Id = : rec.Id];
     
-       System.assertEquals(TRUE, rec.Draft__c, 'Recipe should be marked as draft');
+       System.assertEquals(rec.Draft__c, TRUE, 'Recipe should be marked as draft');
     }
     
     @isTest
