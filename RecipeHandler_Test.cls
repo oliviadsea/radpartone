@@ -35,7 +35,7 @@ public class RecipeHandler_Test {
         // load the rec record and assert that Complexity is difficult
        	rec = [SELECT Complexity__c FROM Recipe__c WHERE Id = : rec.Id];
     
-       System.assertEquals('Difficult', rec.Complexity__c, 'Recipe should be difficult');
+       System.assertEquals(rec.Complexity__c, 'Difficult', 'Recipe should be difficult');
     }
     
     @isTest
