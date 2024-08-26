@@ -1,0 +1,77 @@
+//RAD Final Project!
+//A Utility class to process Stock Item records from the Stock Item Handler
+public with sharing class StockItemHandler {
+    
+//1. Before a Stock Item can be created, check that there is not already a stock item record with a matching name.     
+//If there is already a Stock Item with that name, change the name so that it is the name entered, plus the words “Duplicate Item”.   
+//Alternative (Bonus): Instead of renaming, add a Trigger Exception error as described here: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_triggers_exceptions.htm
+
+	public static void onBeforeInsert(List<Stock_Item__c> newStockItems) {
+        //declare the error message variable and define the error message
+	
+        String errorMsg = 'Stock Item already exists';
+	
+        //create a set to hold the stock items to be inserted
+        //loop over them and add their names as string values
+	
+        Set<String> setNewStockItems = new Set<String>();
+        	for(Stock_Item__c nsi : newStockItems){
+                setNewStockItems.add(String.valueOf(nsi.Item_Name__c));
+        }
+	//query for existing stock items that share a name with items in the set above and put their names in a set
+	
+    	List<Stock_Item__c> existingStockItems = [SELECT Item_Name__c FROM Stock_Item__c WHERE Item_Name__c IN : setNewStockItems];	
+        	Set<String> existingStockItemName = new Set<String>();	
+        //loop over these existing stock items and add their names to the set as string values
+        	for (Stock_Item__c stockItem : existingStockItems) { 
+                existingStockItemName.add(String.valueOf(stockItem.Item_Name__c));
+                System.debug('Existing Stock Items: '+ stockItem.Item_Name__c);
+        		
+        //loop over new stock item names and if the existing item set contains one of the new names, produce error  
+                for(Stock_Item__c item : newStockItems){
+                    System.debug('New Stock Items: '+ item.Item_Name__c);
+                if(existingStockItemName.contains(stockItem.Item_Name__c)){
+                    item.addError(errorMsg);
+        //view items flagged as duplicates
+                System.debug('Item is a duplicate '+ stockItem.Item_Name__c);
+                                     
+				}
+    		}
+		}
+    }        
+//2. Before a Stock Item is deleted, before delete
+//make sure that the stock on hand is at 0. If it is not, Create a case so that someone is alerted.
+//The case should indicate the name of the item that was deleted, the id, and the number of stock that were on hand when it was deleted in the description. 
+    public static void onBeforeDelete(List<Stock_Item__c> deletedStockItems, Map<Id, Stock_Item__c> deletedStockItemMap) {
+        List<Case> newCases = new List<Case>();
+    		//loop through deleted stock items and if stock on hand is greater than 0 create a case with the following details
+             for (Stock_Item__c stockItem : deletedStockItems) {
+                 if (stockItem.Stock_on_Hand__c > 0) {
+                    Case cse = new Case();
+                	cse.Status = 'New';
+                	cse.Origin = 'System';
+                	cse.Subject = 'Alert! Stock Item Deleted When Stock On Hand';
+                	cse.Description = 'Stock item '+ stockItem.Item_Name__c +' with Id: '+stockItem.Id +' '+ 'was deleted when stock on hand was: '+stockItem.Stock_on_Hand__c;
+             	//add new cases to the newCases list
+                     newCases.add(cse);
+                 }
+             	//view new cases before they are inserted
+              		System.debug('New Cases: ' + newCases);
+                
+                 insert newCases;   
+             }
+    }
+    
+//3. We need a method that can be called from elsewhere in our codebase called getLowStockItems   
+// This should return a list of all the Stock Items that have a stock on hand count at or below their minimum stock level.
+// It should include the following fields for the Stock Items it returns: 
+// ID, Item_Name__c, Item_Stock_is_Low__c, Minimum_Stock_Level__c, Stock_on_Hand__c
+
+    public static List<Stock_Item__c> getLowStockItems() { 
+        List<Stock_Item__c> listOfStockItems = [SELECT Id, Item_Name__c, Item_Stock_is_Low__c, Minimum_Stock_Level__c, Stock_on_Hand__c FROM Stock_Item__c WHERE Low_Stock__c = TRUE];
+        System.debug('Low stock items: '+listOfStockItems);	
+        return listOfStockItems;
+	
+//created a custom formula field to do the comparison determining what items are considered low stock
+        }
+     }
