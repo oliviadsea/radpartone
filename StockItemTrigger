@@ -1,0 +1,18 @@
+//RAD Final Project!
+trigger StockItemTrigger on Stock_Item__c (before insert, before delete) {
+
+	//Instantiate StockItemHandler
+	StockItemHandler handler = new StockItemHandler();
+
+	////Before Insert Handling
+	if(Trigger.isInsert && Trigger.isBefore) {
+		StockItemHandler.OnBeforeInsert(Trigger.new);
+	}
+
+	////Before Delete Handling
+	if(Trigger.isDelete && Trigger.isBefore) {
+		StockItemHandler.OnBeforeDelete(Trigger.old, Trigger.OldMap);
+	}
+
+
+}
